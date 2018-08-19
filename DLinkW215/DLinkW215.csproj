@@ -2,6 +2,19 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Version>0.0.1</Version>
+    <Authors>Alberto Geniola</Authors>
+    <Company />
+    <Description>A C# port of the pyW215 python library for the DLink W215 Smart Plug.</Description>
+    <Copyright>MIT</Copyright>
+    <RepositoryUrl>https://github.com/albertogeniola/DLinkW215.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Dlink SmartPLug W215</PackageTags>
+    <PackageReleaseNotes>This release has been tested with a DLink W215 plug, firmare 2.22, European Version.
+Exception handling has not been taken care of. In most cases, if something goes wrong, the API call simply returns null.
+</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
