@@ -4,24 +4,24 @@ python library for the DLink W215 smart plug. Credits go to both @LinuxChristian
 to @bikerp, who both contributed to the creation of respectively Python and Javascript
 implementations.
 
-Just to be clear, the following is the PowerPlug we are taling about:
+Just to be clear, the following is the PowerPlug we are talking about:
 
 ![DLink W215 power plug image](https://github.com/albertogeniola/DLinkW215/blob/master/41G5fawxPoL.jpg)
 
 ## Installation
 In order to use this library in your projects, you might either reference the package via NuGet or download the project and reference the library externally. 
 
-I strongly suggest to use NuGet package manager to do so. The package has been pushed on NuGet repository: https://www.nuget.org/packages/DLinkW215/.
+I strongly recommend to use NuGet package manager to do so. The package has been pushed on NuGet repository: https://www.nuget.org/packages/DLinkW215/.
 
 From the package manager console:
 
     PM> Install-Package DLinkW215 -Version 0.0.1
 
-From .NET CLI
+Or from .NET CLI
 
     > dotnet add package DLinkW215 --version 0.0.1
 
-From Packet CLI
+Or from Packet CLI
 
     > paket add DLinkW215 --version 0.0.1
 
@@ -56,4 +56,4 @@ The library is pretty easy to use:
     
 
 ## Notes and known issues
-The library works. However no verbose error handling system has been implemented. This means that, if there is something wrong, exception are not well handled. Most of the APIs will simply catch any exception and return null instead. 
+The library works as expected, however no verbose error handling system has been implemented. This means that, if there is something wrong, exception are not well handled. Most of the APIs will simply catch any exception and return null instead. 
