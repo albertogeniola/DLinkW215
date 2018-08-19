@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <Authors>Alberto Geniola</Authors>
     <Company />
     <Description>A C# port of the pyW215 python library for the DLink W215 Smart Plug.</Description>
