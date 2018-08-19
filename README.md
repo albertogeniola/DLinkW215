@@ -4,6 +4,10 @@ python library for the DLink W215 smart plug. Credits go to both @LinuxChristian
 to @bikerp, who both contributed to the creation of respectively Python and Javascript
 implementations.
 
+Just to be clear, the following is the PowerPlug we are taling about:
+
+![DLink W215 power plug image](https://github.com/albertogeniola/DLinkW215/blob/master/41G5fawxPoL.jpg)
+
 ## Installation
 In order to use this library in your projects, you might either reference the package via NuGet or download the project and reference the library externally. 
 
