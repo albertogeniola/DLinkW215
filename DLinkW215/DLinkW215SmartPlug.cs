@@ -4,6 +4,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +17,7 @@ namespace DLinkW215
     /// Port of the pyW215 (https://github.com/LinuxChristian/pyW215)python library for controlling the DLink W215 smart plug.
     /// Credits to LinuxChristian for the good job.
     /// </summary>
-    public class DLinkW215SmartPlug
+    public class DLinkW215SmartPlug : IDisposable
     {
         public string Ip { get; private set; }
         public string Url { get; private set; }
@@ -28,10 +30,15 @@ namespace DLinkW215
 
         private bool _errorReport;
         private CookieContainer _cookieContainer;
+        private HttpClientHandler _httpClientHandler;
+        private HttpClient _httpClient;
 
         public DLinkW215SmartPlug(string ip, string password, string user = "admin", bool legacySupport = false)
         {
             _cookieContainer = new CookieContainer();
+            _httpClientHandler = new HttpClientHandler();
+            _httpClientHandler.CookieContainer = _cookieContainer;
+            _httpClient = new HttpClient(_httpClientHandler);
             Ip = ip;
             Url = string.Format("http://{0}/HNAP1/", Ip);
             User = user;
@@ -40,6 +47,21 @@ namespace DLinkW215
             LegacySupport = legacySupport;
             ModelName = SOAPAction("GetDeviceSettings", "ModelName", "");
             _errorReport = false;
+        }
+
+        public void Dispose()
+        {
+            if (_httpClientHandler != null)
+            {
+                _httpClientHandler.Dispose();
+                _httpClientHandler = null;
+            }
+
+            if (_httpClient != null)
+            {
+                _httpClient.Dispose();
+                _httpClient = null;
+            }
         }
 
         private string SOAPAction(string action, string responseElement, string parameters = "", bool recursive = false)
@@ -65,26 +87,16 @@ namespace DLinkW215
             var action_url = string.Format("\"http://purenetworks.com/HNAP1/{0}\"", action);
             var AUTHKey = HmacMd5(auth[0], (time_stamp + action_url)).ToUpper() + " " + time_stamp;
 
-            var request = WebRequest.CreateHttp(Url);
-            request.CookieContainer = _cookieContainer;
-            byte[] data = Encoding.UTF8.GetBytes(payload);
-            request.Method = "POST";
-            request.ContentLength = data.Length;
-            request.ContentType = "\"text/xml; charset=utf-8\"";
-            request.Headers["SOAPAction"] = string.Format("\"http://purenetworks.com/HNAP1/{0}\"", action);
-            request.Headers["HNAP_AUTH"] = AUTHKey;
-            //request.CookieContainer.Add(new Cookie("uid", auth[1], "/", Ip));
-
+            var payloadContent = new StringContent(payload, Encoding.UTF8);
+            payloadContent.Headers.ContentType = new MediaTypeHeaderValue("\"text/xml; charset=utf-8\"");
+            payloadContent.Headers.Add("SOAPAction", string.Format("\"http://purenetworks.com/HNAP1/{0}\"", action));
+            payloadContent.Headers.Add("HNAP_AUTH", AUTHKey);
             string responseString = null;
 
             try
             {
-                using (var stream = request.GetRequestStream())
-                {
-                    stream.Write(data, 0, data.Length);
-                }
-                var response = (HttpWebResponse)request.GetResponse();
-                responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+                var response = _httpClient.PostAsync(Url, payloadContent).GetAwaiter().GetResult();
+                responseString = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
@@ -166,24 +178,16 @@ namespace DLinkW215
             var payload = InitialAuthPayload();
 
             // Build initial header
-            var request = WebRequest.CreateHttp(Url);
-            byte[] data1 = Encoding.UTF8.GetBytes(payload);
-            request.Method = "POST";
-            request.ContentLength = data1.Length;
-            request.ContentType = "\"text/xml; charset=utf-8\"";
-            request.Headers["SOAPAction"] = "\"http://purenetworks.com/HNAP1/Login\"";
+            var payloadContent1 = new StringContent(payload, Encoding.UTF8);
+            payloadContent1.Headers.ContentType = new MediaTypeHeaderValue("\"text/xml; charset=utf-8\"");
+            payloadContent1.Headers.Add("SOAPAction", "\"http://purenetworks.com/HNAP1/Login\"");
 
             // Request privatekey, cookie and challenge
             string xmlData = null;
             try
             {
-                using (var stream = request.GetRequestStream())
-                {
-                    stream.Write(data1, 0, data1.Length);
-                }
-                var response1 = (HttpWebResponse)request.GetResponse();
-                xmlData = new StreamReader(response1.GetResponseStream()).ReadToEnd();
-
+                var response1 = _httpClient.PostAsync(Url, payloadContent1).GetAwaiter().GetResult();
+                xmlData = response1.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
@@ -219,24 +223,16 @@ namespace DLinkW215
 
             var response_payload = AuthPayload(login_pwd);
 
-            // Build response to initial request
-            var challengeResponseRequest = WebRequest.CreateHttp(Url);
-            byte[] data = Encoding.UTF8.GetBytes(response_payload);
-            challengeResponseRequest.ContentLength = data.Length;
-            challengeResponseRequest.Method = "POST";
+            // Build response to request
+            var payloadContent = new StringContent(response_payload, Encoding.UTF8);
+            payloadContent.Headers.ContentType = new MediaTypeHeaderValue("\"text/xml; charset=utf-8\"");
+            payloadContent.Headers.Add("SOAPAction", "\"http://purenetworks.com/HNAP1/Login\"");
+            payloadContent.Headers.Add("HNAP_AUTH", string.Format("\"{0}\"", privateKey));
 
-            challengeResponseRequest.CookieContainer = _cookieContainer;
-            challengeResponseRequest.ContentType = "\"text/xml; charset=utf-8\"";
-            challengeResponseRequest.Headers["SOAPAction"] = "\"http://purenetworks.com/HNAP1/Login\"";
-            challengeResponseRequest.Headers["HNAP_AUTH"] = string.Format("\"{0}\"", privateKey);
-            challengeResponseRequest.CookieContainer.SetCookies(new Uri(Url), string.Format("uid={0}", cookie));
+            _cookieContainer.SetCookies(new Uri(Url), string.Format("uid={0}", cookie));
 
-            using (var stream = challengeResponseRequest.GetRequestStream())
-            {
-                stream.Write(data, 0, data.Length);
-            }
-            var response = (HttpWebResponse)challengeResponseRequest.GetResponse();
-            xmlData = new StreamReader(response.GetResponseStream()).ReadToEnd();
+            var response = _httpClient.PostAsync(Url, payloadContent).GetAwaiter().GetResult();
+            xmlData = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             root = new XmlDocument();
             root.LoadXml(xmlData);
 
@@ -317,19 +313,13 @@ namespace DLinkW215
             try
             {
                 var destUrl = string.Format("http://{0}/my_cgi.cgi", Ip);
-                var request = WebRequest.CreateHttp(destUrl);
-                byte[] data = Encoding.UTF8.GetBytes("request=create_chklst");
-                request.ContentLength = data.Length;
-                request.Method = "POST";
-
-                using (var stream = request.GetRequestStream())
+                var data = new Dictionary<string, string>();
+                data.Add("request", "create_chklst");
+                var payloadContent = new FormUrlEncodedContent(data);
+                var response = _httpClient.PostAsync(destUrl, payloadContent).GetAwaiter().GetResult();
+                var stringResp = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                foreach (string line in stringResp.Split('\n'))
                 {
-                    stream.Write(data, 0, data.Length);
-                }
-                var response = (HttpWebResponse)request.GetResponse();
-                var stringResp = new StreamReader(response.GetResponseStream());
-                string line = null;
-                while ((line = stringResp.ReadLine()) != null) {
                     var tokens = line.Split(':');
                     res[tokens[0].Trim()] = tokens[1].Trim();
                 }
@@ -384,8 +374,10 @@ namespace DLinkW215
         /// Get the total power consumpuntion in the device lifetime.
         /// </summary>
         /// <returns></returns>
-        public double? GetTotalConsumption() {
-            if (LegacySupport) {
+        public double? GetTotalConsumption()
+        {
+            if (LegacySupport)
+            {
                 // TotalConsumption currently fails on the legacy protocol and
                 // creates a mess in the logs. Just return 'N/A' for now.
                 return null;
@@ -395,7 +387,9 @@ namespace DLinkW215
             try
             {
                 textRes = SOAPAction("GetPMWarningThreshold", "TotalConsumption", ModuleParameters("2"));
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 return null;
             }
 
@@ -404,7 +398,9 @@ namespace DLinkW215
             try
             {
                 return double.Parse(textRes, NumberStyles.Any, CultureInfo.InvariantCulture);
-            } catch (FormatException ex) {
+            }
+            catch (FormatException ex)
+            {
                 //_LOGGER.error("Failed to retrieve total power consumption from SmartPlug")
                 return null;
             }
@@ -414,12 +410,15 @@ namespace DLinkW215
         /// Get the device temperature in celsius.
         /// </summary>
         /// <returns></returns>
-        public double? GetTemperature() {
+        public double? GetTemperature()
+        {
             try
             {
                 string textres = SOAPAction("GetCurrentTemperature", "CurrentTemperature", ModuleParameters("3"));
                 return double.Parse(textres, NumberStyles.Any, CultureInfo.InvariantCulture);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 return null;
             }
         }
@@ -428,7 +427,8 @@ namespace DLinkW215
         /// Get the device state (i.e. ON or OFF).
         /// </summary>
         /// <returns></returns>
-        public SwitchState GetState() {
+        public SwitchState GetState()
+        {
             var response = SOAPAction("GetSocketSettings", "OPStatus", ModuleParameters("1"));
             if (response == null)
                 return SwitchState.Unknown;
@@ -436,7 +436,8 @@ namespace DLinkW215
                 return SwitchState.On;
             else if (response.ToLower() == "false")
                 return SwitchState.Off;
-            else {
+            else
+            {
                 //_LOGGER.warning("Unknown state %s returned" % str(response.lower()))
                 return SwitchState.Unknown;
             }
@@ -461,7 +462,8 @@ namespace DLinkW215
             }
         }
 
-        public enum SwitchState {
+        public enum SwitchState
+        {
             On,
             Off,
             Unknown
