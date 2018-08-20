@@ -15,15 +15,15 @@ I strongly recommend to use NuGet package manager to do so. The package has been
 
 From the package manager console:
 
-    PM> Install-Package DLinkW215 -Version 0.0.1
+    PM> Install-Package DLinkW215 -Version 0.0.2
 
 Or from .NET CLI
 
-    > dotnet add package DLinkW215 --version 0.0.1
+    > dotnet add package DLinkW215 --version 0.0.2
 
 Or from Packet CLI
 
-    > paket add DLinkW215 --version 0.0.1
+    > paket add DLinkW215 --version 0.0.2
 
 ## Usage
 The library is pretty easy to use:
