@@ -28,31 +28,31 @@ Or from Packet CLI
 ## Usage
 The library is pretty easy to use:
     
-    ```cs
-    // The first parameter is the IP address of the power plug
-    // while the second one is the ACCESS CODE printed on the plug itself
-    var plug = new DLinkW215SmartPlug("192.168.1.9", "123456");
-    
-    // Returns the current power switch state    
-    var state = plug.GetState(); 
+```cs
+// The first parameter is the IP address of the power plug
+// while the second one is the ACCESS CODE printed on the plug itself
+var plug = new DLinkW215SmartPlug("192.168.1.9", "123456");
 
-    // Return the current power consumption in Watts. If an error occurred, null is returned.
-    var powerConsumption = plug.GetCurrentConsumption();
-    if (powerConsumption==null)
-        Console.Out.WriteLine("Current consumption is " + powerConsumption + " Watts");
-    else
-        Console.Out.WriteLine("An error occurred and it was not possible to read the power consumtpion from the device");
-    
-    // Same thing happens for the following:
-    // plug.GetTotalConsumption()
-    // plug.GetTemperature() // In Celsius!
-    
-    // Turn the switch On
-    plug.SetState(DLinkW215.DLinkW215SmartPlug.On);
+// Returns the current power switch state    
+var state = plug.GetState(); 
 
-    // Turn the switch Off
-    plug.SetState(DLinkW215.DLinkW215SmartPlug.Off);
-    ```
+// Return the current power consumption in Watts. If an error occurred, null is returned.
+var powerConsumption = plug.GetCurrentConsumption();
+if (powerConsumption==null)
+    Console.Out.WriteLine("Current consumption is " + powerConsumption + " Watts");
+else
+    Console.Out.WriteLine("An error occurred and it was not possible to read the power consumtpion from the device");
+
+// Same thing happens for the following:
+// plug.GetTotalConsumption()
+// plug.GetTemperature() // In Celsius!
+
+// Turn the switch On
+plug.SetState(DLinkW215.DLinkW215SmartPlug.On);
+
+// Turn the switch Off
+plug.SetState(DLinkW215.DLinkW215SmartPlug.Off);
+```
     
 
 ## Notes and known issues
