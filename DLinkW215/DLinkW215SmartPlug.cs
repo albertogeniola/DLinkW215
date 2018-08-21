@@ -88,7 +88,7 @@ namespace DLinkW215
             var AUTHKey = HmacMd5(auth[0], (time_stamp + action_url)).ToUpper() + " " + time_stamp;
 
             var payloadContent = new StringContent(payload, Encoding.UTF8);
-            payloadContent.Headers.ContentType = new MediaTypeHeaderValue("\"text/xml; charset=utf-8\"");
+            payloadContent.Headers.ContentType = new MediaTypeHeaderValue("text/xml");
             payloadContent.Headers.Add("SOAPAction", string.Format("\"http://purenetworks.com/HNAP1/{0}\"", action));
             payloadContent.Headers.Add("HNAP_AUTH", AUTHKey);
             string responseString = null;
@@ -179,7 +179,7 @@ namespace DLinkW215
 
             // Build initial header
             var payloadContent1 = new StringContent(payload, Encoding.UTF8);
-            payloadContent1.Headers.ContentType = new MediaTypeHeaderValue("\"text/xml; charset=utf-8\"");
+            payloadContent1.Headers.ContentType = new MediaTypeHeaderValue("text/xml");
             payloadContent1.Headers.Add("SOAPAction", "\"http://purenetworks.com/HNAP1/Login\"");
 
             // Request privatekey, cookie and challenge
@@ -225,7 +225,7 @@ namespace DLinkW215
 
             // Build response to request
             var payloadContent = new StringContent(response_payload, Encoding.UTF8);
-            payloadContent.Headers.ContentType = new MediaTypeHeaderValue("\"text/xml; charset=utf-8\"");
+            payloadContent.Headers.ContentType = new MediaTypeHeaderValue("text/xml");
             payloadContent.Headers.Add("SOAPAction", "\"http://purenetworks.com/HNAP1/Login\"");
             payloadContent.Headers.Add("HNAP_AUTH", string.Format("\"{0}\"", privateKey));
 
