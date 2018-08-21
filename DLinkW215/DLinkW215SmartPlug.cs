@@ -45,7 +45,10 @@ namespace DLinkW215
             Password = password;
             Authenticated = null;
             LegacySupport = legacySupport;
-            ModelName = SOAPAction("GetDeviceSettings", "ModelName", "");
+            
+            var deviceSettings = SOAPAction("GetDeviceSettings");
+            ModelName = GetResponseTagValue(deviceSettings, "ModelName");
+
             _errorReport = false;
         }
 
@@ -64,7 +67,36 @@ namespace DLinkW215
             }
         }
 
-        private string SOAPAction(string action, string responseElement, string parameters = "", bool recursive = false)
+        private string SOAPAction(string action, string responseElementTagName, string parameters = "", bool recursive = false) {
+            XmlDocument doc = SOAPAction(action, parameters, recursive);
+
+            return GetResponseTagValue(doc, responseElementTagName);
+        }
+
+        private string GetResponseTagValue(XmlDocument doc, string responseElementTag) {
+            // Get value from device
+            string value = null;
+            try
+            {
+                var valueArray = doc.GetElementsByTagName(responseElementTag);
+                value = valueArray[0].InnerText;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+
+            if (value == null && _errorReport == false)
+            {
+                _errorReport = true;
+                return null;
+            }
+
+            _errorReport = false;
+            return value;
+        }
+
+        private XmlDocument SOAPAction(string action, string parameters = "", bool recursive = false)
         {
             // Authenticate client
             if (Authenticated == null)
@@ -102,11 +134,9 @@ namespace DLinkW215
             {
                 // Try to re-authenticate once
                 Authenticated = null;
-
-                // Recursive call to retry action
-                string return_value = null;
+                XmlDocument return_value = null;
                 if (!recursive)
-                    return_value = SOAPAction(action, responseElement, parameters, true);
+                    return_value = SOAPAction(action, parameters, true);
                 if (recursive || return_value == null)
                 {
                     _errorReport = true;
@@ -118,27 +148,7 @@ namespace DLinkW215
 
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(responseString);
-
-            // Get value from device
-            string value = null;
-            try
-            {
-                var valueArray = doc.GetElementsByTagName(responseElement);
-                value = valueArray[0].InnerText;
-            }
-            catch (Exception e)
-            {
-                return null;
-            }
-
-            if (value == null && _errorReport == false)
-            {
-                _errorReport = true;
-                return null;
-            }
-
-            _errorReport = false;
-            return value;
+            return doc;
         }
 
         private static string HmacMd5(string key, string text)
@@ -332,6 +342,11 @@ namespace DLinkW215
             }
         }
 
+        public XmlDocument GetRawDeviceSettings()
+        {
+            var doc = SOAPAction("GetDeviceSettings");
+            return doc;
+        }
 
         /// <summary>
         /// Get the current power consumption in Watt.
